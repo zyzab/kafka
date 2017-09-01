@@ -116,9 +116,17 @@ public class MemoryRecords implements Records {
      * to accept this single record.
      */
     public boolean hasRoomFor(byte[] key, byte[] value) {
+        //当前不是写模式，说明消息已经写满，正在发送，或者在发送中
         if (!this.writable)
             return false;
-
+        /**
+         * MemoryRecords是否写入过消息?
+         * 没写过,申请Buffer初始化内存大小是否>=消息体大小
+         * 写入过,batch.size是否>=已写入的内存大小+消息体大小
+         * 考虑这两种情况是因为如果曾经写入了消息体大小大于batch.size,则该Buffer只会保存这一条消息，
+         * 从BufferPool获取的Buffer大小都是batch.size，此时initialCapacity=writeLimit
+         *
+          */
         return this.compressor.numRecordsWritten() == 0 ?
             this.initialCapacity >= Records.LOG_OVERHEAD + Record.recordSize(key, value) :
             this.writeLimit >= this.compressor.estimatedBytesWritten() + Records.LOG_OVERHEAD + Record.recordSize(key, value);

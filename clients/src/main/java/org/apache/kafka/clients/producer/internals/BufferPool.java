@@ -43,11 +43,26 @@ import org.apache.kafka.common.utils.Time;
  */
 public final class BufferPool {
 
+    /**
+     * BufferPool缓冲池最大的字节大小，也就是配置buffer.memory
+     */
     private final long totalMemory;
+    /**
+     * 每个Buffer固定大小，也就是配置batch.size
+     */
     private final int poolableSize;
     private final ReentrantLock lock;
+    /**
+     * 空闲的buffer队列
+     */
     private final Deque<ByteBuffer> free;
+    /**
+     * 等待分配Buffer的队列
+     */
     private final Deque<Condition> waiters;
+    /**
+     * 可用的内存大小
+     */
     private long availableMemory;
     private final Metrics metrics;
     private final Time time;

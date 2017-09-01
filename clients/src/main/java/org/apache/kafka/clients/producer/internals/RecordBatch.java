@@ -64,6 +64,7 @@ public final class RecordBatch {
      * @return The RecordSend corresponding to this record or null if there isn't sufficient room.
      */
     public FutureRecordMetadata tryAppend(long timestamp, byte[] key, byte[] value, Callback callback, long now) {
+        //判断是否需要新创建RecordBatch来存储消息
         if (!this.records.hasRoomFor(key, value)) {
             return null;
         } else {
@@ -74,6 +75,7 @@ public final class RecordBatch {
                                                                    timestamp, checksum,
                                                                    key == null ? -1 : key.length,
                                                                    value == null ? -1 : value.length);
+            //如果需要回调把回调加入thunks
             if (callback != null)
                 thunks.add(new Thunk(callback, future));
             this.recordCount++;
@@ -139,6 +141,15 @@ public final class RecordBatch {
      *     <li> the batch is not in retry AND request timeout has elapsed after it is ready (full or linger.ms has reached).
      *     <li> the batch is in retry AND request timeout has elapsed after the backoff period ended.
      * </ol>
+     */
+    /**
+     *
+     * @param requestTimeoutMs 等待服务器响应的最大时间,ack=0不需要等待情况的处理？
+     * @param retryBackoffMs
+     * @param now
+     * @param lingerMs
+     * @param isFull            消息是否已经写满缓存
+     * @return
      */
     public boolean maybeExpire(int requestTimeoutMs, long retryBackoffMs, long now, long lingerMs, boolean isFull) {
         boolean expire = false;

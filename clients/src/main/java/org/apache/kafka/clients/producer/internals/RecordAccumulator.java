@@ -161,11 +161,9 @@ public final class RecordAccumulator {
                                      byte[] value,
                                      Callback callback,
                                      long maxTimeToBlock) throws InterruptedException {
-        // We keep track of the number of appending thread to make sure we do not miss batches in
-        // abortIncompleteBatches().
         appendsInProgress.incrementAndGet();
         try {
-            // check if we have an in-progress batch
+            //从ConcurrentMap<TopicPartition, Deque<RecordBatch>>中换取分区对应的Deque队列
             Deque<RecordBatch> dq = getOrCreateDeque(tp);
             synchronized (dq) {
                 if (closed)
@@ -174,8 +172,6 @@ public final class RecordAccumulator {
                 if (appendResult != null)
                     return appendResult;
             }
-
-            // we don't have an in-progress record batch try to allocate a new batch
             int size = Math.max(this.batchSize, Records.LOG_OVERHEAD + Record.recordSize(key, value));
             log.trace("Allocating a new {} byte message buffer for topic {} partition {}", size, tp.topic(), tp.partition());
             ByteBuffer buffer = free.allocate(size, maxTimeToBlock);
@@ -183,10 +179,11 @@ public final class RecordAccumulator {
                 // Need to check if producer is closed again after grabbing the dequeue lock.
                 if (closed)
                     throw new IllegalStateException("Cannot send after the producer is closed.");
-
+                //再次尝试写入
                 RecordAppendResult appendResult = tryAppend(timestamp, key, value, callback, dq);
+                //如果写入成功，说明别的线程new了一个新的RecordBatch
                 if (appendResult != null) {
-                    // Somebody else found us a batch, return the one we waited for! Hopefully this doesn't happen often...
+                    // 释放之前申请的buffer
                     free.deallocate(buffer);
                     return appendResult;
                 }
@@ -195,6 +192,7 @@ public final class RecordAccumulator {
                 FutureRecordMetadata future = Utils.notNull(batch.tryAppend(timestamp, key, value, callback, time.milliseconds()));
 
                 dq.addLast(batch);
+                //把新创建的batch加入没有发送的incomplete集合中
                 incomplete.add(batch);
                 return new RecordAppendResult(future, dq.size() > 1 || batch.records.isFull(), true);
             }
@@ -211,9 +209,11 @@ public final class RecordAccumulator {
         RecordBatch last = deque.peekLast();
         if (last != null) {
             FutureRecordMetadata future = last.tryAppend(timestamp, key, value, callback, time.milliseconds());
+            //写入失败,需要把MemoryRecords置为不可写状态,buffer.flip()切换到读
             if (future == null)
                 last.records.close();
             else
+                //判断是否可以唤醒Sender发送线程,deque.size() > 1 || last.records.isFull()
                 return new RecordAppendResult(future, deque.size() > 1 || last.records.isFull(), false);
         }
         return null;
