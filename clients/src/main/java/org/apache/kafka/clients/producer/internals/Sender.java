@@ -60,15 +60,18 @@ public class Sender implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Sender.class);
 
     /* the state of each nodes connection */
+    //每个连接的状态
     private final KafkaClient client;
 
     /* the record accumulator that batches records */
+    //消息收集器
     private final RecordAccumulator accumulator;
 
     /* the metadata for the client */
     private final Metadata metadata;
 
     /* the flag indicating whether the producer should guarantee the message order on the broker or not. */
+    //是否需要保证一个topic正在发送的RecordBatch只有一个，max.in.flight.requests.per.connection 设置为1时会保证
     private final boolean guaranteeMessageOrder;
 
     /* the maximum request size to attempt to send to the server */
@@ -200,7 +203,7 @@ public class Sender implements Runnable {
         }
 
         // create produce requests
-        //把TopicPartition->List<>
+        //把TopicPartition->List<RecordBatch> 转化为 NodeId(每个Broker节点Id)->List<RecordBatch>
         Map<Integer, List<RecordBatch>> batches = this.accumulator.drain(cluster,
                                                                          result.readyNodes,
                                                                          this.maxRequestSize,
@@ -221,6 +224,7 @@ public class Sender implements Runnable {
             this.sensors.recordErrors(expiredBatch.topicPartition.topic(), expiredBatch.recordCount);
 
         sensors.updateProduceRequestMetrics(batches);
+        //把NodeId(每个Broker节点Id)->List<RecordBatch>转化为List<ClientRequest>
         List<ClientRequest> requests = createProduceRequests(batches, now);
         // If we have any nodes that are ready to send + have sendable data, poll with 0 timeout so this can immediately
         // loop and try sending more data. Otherwise, the timeout is determined by nodes that have partitions with data

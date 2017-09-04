@@ -81,12 +81,17 @@ public class Selector implements Selectable {
     private static final Logger log = LoggerFactory.getLogger(Selector.class);
 
     private final java.nio.channels.Selector nioSelector;
+    //一个节点对应一个KafkaChannel
     private final Map<String, KafkaChannel> channels;
+    //已完成发送的Send集合,一个KafkaChannel对应一个Send
     private final List<Send> completedSends;
     private final List<NetworkReceive> completedReceives;
     private final Map<KafkaChannel, Deque<NetworkReceive>> stagedReceives;
+    //初始化连接立即连接上的新连接
     private final Set<SelectionKey> immediatelyConnectedKeys;
+    //断开的连接集合
     private final List<String> disconnected;
+    //连接的集合
     private final List<String> connected;
     private final List<String> failedSends;
     private final Time time;
@@ -96,6 +101,7 @@ public class Selector implements Selectable {
     private final ChannelBuilder channelBuilder;
     private final int maxReceiveSize;
     private final boolean metricsPerConnection;
+    //空闲连接超时操作
     private final IdleExpiryManager idleExpiryManager;
 
     /**
@@ -288,7 +294,9 @@ public class Selector implements Selectable {
         this.sensors.selectTime.record(endSelect - startSelect, time.milliseconds());
 
         if (readyKeys > 0 || !immediatelyConnectedKeys.isEmpty()) {
+            //处理已经就绪的连接
             pollSelectionKeys(this.nioSelector.selectedKeys(), false, endSelect);
+            //处理新建立的连接
             pollSelectionKeys(immediatelyConnectedKeys, true, endSelect);
         }
 
@@ -299,6 +307,7 @@ public class Selector implements Selectable {
 
         // we use the time at the end of select to ensure that we don't close any connections that
         // have just been processed in pollSelectionKeys
+        //关闭空闲的连接,根据配置的最大空闲时间connections.max.idle.ms判断
         maybeCloseOldestConnection(endSelect);
     }
 

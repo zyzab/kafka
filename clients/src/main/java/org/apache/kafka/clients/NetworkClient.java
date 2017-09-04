@@ -50,6 +50,7 @@ public class NetworkClient implements KafkaClient {
     private static final Logger log = LoggerFactory.getLogger(NetworkClient.class);
 
     /* the selector used to perform network i/o */
+    //执行NIO的选择器
     private final Selectable selector;
 
     private final MetadataUpdater metadataUpdater;
@@ -57,9 +58,11 @@ public class NetworkClient implements KafkaClient {
     private final Random randOffset;
 
     /* the state of each node's connection */
+    //每个连接Node的状态
     private final ClusterConnectionStates connectionStates;
 
     /* the set of requests currently being sent or awaiting a response */
+    //准备发送或者等待响应的消息
     private final InFlightRequests inFlightRequests;
 
     /* the socket send buffer size in bytes */
@@ -221,6 +224,7 @@ public class NetworkClient implements KafkaClient {
      * @param node The node
      */
     private boolean canSendRequest(String node) {
+        //该Node是否连接状态&&是否已准备好发送&&
         return connectionStates.isConnected(node) && selector.isChannelReady(node) && inFlightRequests.canSendMore(node);
     }
 
