@@ -144,10 +144,10 @@ public final class RecordBatch {
      */
     /**
      *
-     * @param requestTimeoutMs 等待服务器响应的最大时间,ack=0不需要等待情况的处理？
+     * @param requestTimeoutMs  等待服务器响应的最大时间,ack=0不需要等待情况的处理？
      * @param retryBackoffMs
      * @param now
-     * @param lingerMs
+     * @param lingerMs          消息延时发送的时间
      * @param isFull            消息是否已经写满缓存
      * @return
      */

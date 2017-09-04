@@ -173,9 +173,11 @@ public class Sender implements Runnable {
     void run(long now) {
         Cluster cluster = metadata.fetch();
         // get the list of partitions with data ready to send
+        // 获取满足发送条件的RecordBatch对应的nodes
         RecordAccumulator.ReadyCheckResult result = this.accumulator.ready(cluster, now);
 
         // if there are any partitions whose leaders are not known yet, force metadata update
+        // 如果有任何一个leader node未知，则强制更新标示
         if (!result.unknownLeaderTopics.isEmpty()) {
             // The set of topics with unknown leader contains topics with leader election pending as well as
             // topics which may have expired. Add the topic again to metadata to ensure it is included
@@ -186,6 +188,7 @@ public class Sender implements Runnable {
         }
 
         // remove any nodes we aren't ready to send to
+        // 移除没有连接的Node的，并且初始化网络连接，等待下次再调用
         Iterator<Node> iter = result.readyNodes.iterator();
         long notReadyTimeout = Long.MAX_VALUE;
         while (iter.hasNext()) {
@@ -197,10 +200,12 @@ public class Sender implements Runnable {
         }
 
         // create produce requests
+        //把TopicPartition->List<>
         Map<Integer, List<RecordBatch>> batches = this.accumulator.drain(cluster,
                                                                          result.readyNodes,
                                                                          this.maxRequestSize,
                                                                          now);
+        //max.in.flight.requests.per.connection 设置为1时,保证一个topic只有一个RecordBatch在发送,保证有序性
         if (guaranteeMessageOrder) {
             // Mute all the partitions drained
             for (List<RecordBatch> batchList : batches.values()) {
@@ -209,6 +214,7 @@ public class Sender implements Runnable {
             }
         }
 
+        //移除发送超时的RecordBatch,并执行RecordBatch对应的done，最后执行callback.onCompletion方法，可以根据自定义是否补发
         List<RecordBatch> expiredBatches = this.accumulator.abortExpiredBatches(this.requestTimeout, now);
         // update sensors
         for (RecordBatch expiredBatch : expiredBatches)
