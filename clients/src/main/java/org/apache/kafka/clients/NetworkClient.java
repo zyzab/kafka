@@ -224,7 +224,7 @@ public class NetworkClient implements KafkaClient {
      * @param node The node
      */
     private boolean canSendRequest(String node) {
-        //该Node是否连接状态&&是否已准备好发送&&
+        //该Node是否连接状态&&该Node是否已准备好发送&&是否可以发送更多
         return connectionStates.isConnected(node) && selector.isChannelReady(node) && inFlightRequests.canSendMore(node);
     }
 
@@ -269,16 +269,22 @@ public class NetworkClient implements KafkaClient {
         // process completed actions
         long updatedNow = this.time.milliseconds();
         List<ClientResponse> responses = new ArrayList<>();
+        //处理已发送的消息
         handleCompletedSends(responses, updatedNow);
+        //处理已发送成功响应的消息
         handleCompletedReceives(responses, updatedNow);
+        //处理已断开的连接，重新请求 meta
         handleDisconnections(responses, updatedNow);
+        //处理新建立的连接，需要验证通过
         handleConnections();
+        //处理超时请求
         handleTimedOutRequests(responses, updatedNow);
 
         // invoke callbacks
         for (ClientResponse response : responses) {
             if (response.request().hasCallback()) {
                 try {
+                    //回调Callback的onComplete方法
                     response.request().callback().onComplete(response);
                 } catch (Exception e) {
                     log.error("Uncaught error in request completion:", e);

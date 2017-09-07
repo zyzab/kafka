@@ -12,6 +12,9 @@
  */
 package org.apache.kafka.clients.consumer;
 
+/**
+ * 重置position的策略
+ */
 public enum OffsetResetStrategy {
     LATEST, EARLIEST, NONE
 }

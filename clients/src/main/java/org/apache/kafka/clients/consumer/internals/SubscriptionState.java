@@ -52,8 +52,27 @@ public class SubscriptionState {
     private static final String SUBSCRIPTION_EXCEPTION_MESSAGE =
             "Subscription to topics, partitions and pattern are mutually exclusive";
 
+
+    /**
+     * 订阅模式类型枚举
+     */
     private enum SubscriptionType {
-        NONE, AUTO_TOPICS, AUTO_PATTERN, USER_ASSIGNED
+        /**
+         * 初始值
+         */
+        NONE,
+        /**
+         * 按照指定Topic名字进行订阅,自动分配分区
+         */
+        AUTO_TOPICS,
+        /**
+         * 按照指定的正则表达式匹配Topic进行订阅，自动分配分区
+         */
+        AUTO_PATTERN,
+        /**
+         * 手动指定消费者消费的Topic以及分区编号
+         */
+        USER_ASSIGNED
     }
 
     /* the type of subscription */
@@ -72,6 +91,7 @@ public class SubscriptionState {
     private final Set<String> groupSubscription;
 
     /* the partitions that are currently assigned, note that the order of partition matters (see FetchBuilder for more details) */
+    /**记录每个TopicPartition的消费状态**/
     private final PartitionStates<TopicPartitionState> assignment;
 
     /* do we need to request the latest committed offsets from the coordinator? */
