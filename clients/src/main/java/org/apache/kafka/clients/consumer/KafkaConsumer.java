@@ -505,6 +505,9 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     private static final String JMX_PREFIX = "kafka.consumer";
 
     private final String clientId;
+    /**
+     *
+     */
     private final ConsumerCoordinator coordinator;
     private final Deserializer<K> keyDeserializer;
     private final Deserializer<V> valueDeserializer;
@@ -926,6 +929,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
+        //获取ConsumerRecords，防止多线程调用，ConsumerRecords不是线程安全的
         acquire();
         try {
             if (timeout < 0)
@@ -934,6 +938,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
             // poll for new data until the timeout expires
             long start = time.milliseconds();
             long remaining = timeout;
+            //阻塞拉取消息数据，如果拉取到，则返回退出，没有等待直到timeout超时，返回空对象
             do {
                 Map<TopicPartition, List<ConsumerRecord<K, V>>> records = pollOnce(remaining);
                 if (!records.isEmpty()) {
