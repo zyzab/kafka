@@ -59,15 +59,18 @@ public class Sender implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Sender.class);
 
     /* the state of each nodes connection */
+    //每个连接的状态
     private final KafkaClient client;
 
     /* the record accumulator that batches records */
+    //消息收集器
     private final RecordAccumulator accumulator;
 
     /* the metadata for the client */
     private final Metadata metadata;
 
     /* the flag indicating whether the producer should guarantee the message order on the broker or not. */
+    //是否需要保证一个topic正在发送的RecordBatch只有一个，max.in.flight.requests.per.connection 设置为1时会保证
     private final boolean guaranteeMessageOrder;
 
     /* the maximum request size to attempt to send to the server */
@@ -172,13 +175,16 @@ public class Sender implements Runnable {
     void run(long now) {
         Cluster cluster = metadata.fetch();
         // get the list of partitions with data ready to send
+        // 获取满足发送条件的RecordBatch对应的nodes
         RecordAccumulator.ReadyCheckResult result = this.accumulator.ready(cluster, now);
 
         // if there are any partitions whose leaders are not known yet, force metadata update
+        // 如果有任何一个leader node未知，则强制更新标示
         if (result.unknownLeadersExist)
             this.metadata.requestUpdate();
 
         // remove any nodes we aren't ready to send to
+        // 移除没有连接的Node的，并且初始化网络连接，等待下次再调用
         Iterator<Node> iter = result.readyNodes.iterator();
         long notReadyTimeout = Long.MAX_VALUE;
         while (iter.hasNext()) {
@@ -190,10 +196,12 @@ public class Sender implements Runnable {
         }
 
         // create produce requests
+        //把TopicPartition->List<RecordBatch> 转化为 NodeId(每个Broker节点Id)->List<RecordBatch>
         Map<Integer, List<RecordBatch>> batches = this.accumulator.drain(cluster,
                                                                          result.readyNodes,
                                                                          this.maxRequestSize,
                                                                          now);
+        //max.in.flight.requests.per.connection 设置为1时,保证一个topic只有一个RecordBatch在发送,保证有序性
         if (guaranteeMessageOrder) {
             // Mute all the partitions drained
             for (List<RecordBatch> batchList : batches.values()) {
@@ -202,12 +210,14 @@ public class Sender implements Runnable {
             }
         }
 
+        //移除发送超时的RecordBatch,并执行RecordBatch对应的done，最后执行callback.onCompletion方法，可以根据自定义是否补发
         List<RecordBatch> expiredBatches = this.accumulator.abortExpiredBatches(this.requestTimeout, now);
         // update sensors
         for (RecordBatch expiredBatch : expiredBatches)
             this.sensors.recordErrors(expiredBatch.topicPartition.topic(), expiredBatch.recordCount);
 
         sensors.updateProduceRequestMetrics(batches);
+        //把NodeId(每个Broker节点Id)->List<RecordBatch>转化为List<ClientRequest>
         List<ClientRequest> requests = createProduceRequests(batches, now);
         // If we have any nodes that are ready to send + have sendable data, poll with 0 timeout so this can immediately
         // loop and try sending more data. Otherwise, the timeout is determined by nodes that have partitions with data

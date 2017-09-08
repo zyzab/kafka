@@ -50,6 +50,7 @@ public class NetworkClient implements KafkaClient {
     private static final Logger log = LoggerFactory.getLogger(NetworkClient.class);
 
     /* the selector used to perform network i/o */
+    //执行NIO的选择器
     private final Selectable selector;
 
     private final MetadataUpdater metadataUpdater;
@@ -57,9 +58,11 @@ public class NetworkClient implements KafkaClient {
     private final Random randOffset;
 
     /* the state of each node's connection */
+    //每个连接Node的状态
     private final ClusterConnectionStates connectionStates;
 
     /* the set of requests currently being sent or awaiting a response */
+    //准备发送或者等待响应的消息
     private final InFlightRequests inFlightRequests;
 
     /* the socket send buffer size in bytes */
@@ -265,16 +268,23 @@ public class NetworkClient implements KafkaClient {
         // process completed actions
         long updatedNow = this.time.milliseconds();
         List<ClientResponse> responses = new ArrayList<>();
+
+        //处理已发送的消息
         handleCompletedSends(responses, updatedNow);
+        //处理已发送成功响应的消息
         handleCompletedReceives(responses, updatedNow);
+        //处理已断开的连接，重新请求 meta
         handleDisconnections(responses, updatedNow);
+        //处理新建立的连接，需要验证通过
         handleConnections();
+        //处理超时请求
         handleTimedOutRequests(responses, updatedNow);
 
         // invoke callbacks
         for (ClientResponse response : responses) {
             if (response.request().hasCallback()) {
                 try {
+                    //回调Callback的onComplete方法
                     response.request().callback().onComplete(response);
                 } catch (Exception e) {
                     log.error("Uncaught error in request completion:", e);

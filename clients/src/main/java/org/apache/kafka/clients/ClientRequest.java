@@ -21,7 +21,13 @@ public final class ClientRequest {
 
     private final long createdTimeMs;
     private final boolean expectResponse;
+    /**
+     * 待发送的消息
+     */
     private final RequestSend request;
+    /**
+     * 服务器响应消息对应的回调处理
+     */
     private final RequestCompletionHandler callback;
     private final boolean isInitiatedByNetworkClient;
     private long sendTimeMs;
