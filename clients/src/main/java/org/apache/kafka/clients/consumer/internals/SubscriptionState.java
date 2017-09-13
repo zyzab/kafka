@@ -82,10 +82,11 @@ public class SubscriptionState {
     private final Set<String> groupSubscription;
 
     /* the list of partitions the user has requested */
-    /**记录每个TopicPartition的消费状态**/
+    /**记录每个手动设置TopicPartition的消费状态**/
     private final Set<TopicPartition> userAssignment;
 
     /* the list of partitions currently assigned */
+    /**记录每个TopicPartition的消费状态**/
     private final Map<TopicPartition, TopicPartitionState> assignment;
 
     /* do we need to request a partition assignment from the coordinator? */
@@ -398,7 +399,9 @@ public class SubscriptionState {
     }
 
     private static class TopicPartitionState {
+        //记录下一次从服务端获取消息的offset
         private Long position; // last consumed position
+        //最近一次提交的offset
         private OffsetAndMetadata committed;  // last committed position
         private boolean paused;  // whether this partition has been paused by the user
         private OffsetResetStrategy resetStrategy;  // the strategy to use if the offset needs resetting

@@ -75,19 +75,39 @@ public class Fetcher<K, V> {
 
     private final ConsumerNetworkClient client;
     private final Time time;
+    /**
+     * 服务端检查累积多少FetchRequest之后才进行响应，而不是立即响应
+     */
     private final int minBytes;
+    /**
+     * 等待FetchResponse最长时间,决定服务端何时进行响应
+     */
     private final int maxWaitMs;
+    /**
+     * 每次fetch操作的最大字节数
+     */
     private final int fetchSize;
     private final long retryBackoffMs;
+    /**
+     * 每次获取Record的最大数量
+     */
     private final int maxPollRecords;
     private final boolean checkCrcs;
     private final Metadata metadata;
     private final FetchManagerMetrics sensors;
+    /**
+     * 每个TopicPartition的消费状态
+     */
     private final SubscriptionState subscriptions;
+    /**
+     * 消息结果缓存数组
+     */
     private final List<CompletedFetch> completedFetches;
     private final Deserializer<K> keyDeserializer;
     private final Deserializer<V> valueDeserializer;
-
+    /**
+     * 保存CompletedFetch解析后的结果集合
+     */
     private PartitionRecords<K, V> nextInLineRecords = null;
 
     public Fetcher(ConsumerNetworkClient client,

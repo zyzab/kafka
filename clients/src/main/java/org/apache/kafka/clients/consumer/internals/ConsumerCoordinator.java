@@ -68,9 +68,18 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
     private final ConsumerCoordinatorMetrics sensors;
     private final SubscriptionState subscriptions;
     private final OffsetCommitCallback defaultOffsetCommitCallback;
+    /**
+     * 是否开启自动提交offset  enable.auto.commit 配置
+     */
     private final boolean autoCommitEnabled;
+    /**
+     * 自动提交offset定时器
+     */
     private final AutoCommitTask autoCommitTask;
     private final ConsumerInterceptors<?, ?> interceptors;
+    /**
+     * 标示是否排查内部的Topic
+     */
     private final boolean excludeInternalTopics;
 
     private MetadataSnapshot metadataSnapshot;

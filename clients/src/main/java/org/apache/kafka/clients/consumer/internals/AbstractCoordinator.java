@@ -82,20 +82,38 @@ public abstract class AbstractCoordinator implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCoordinator.class);
 
+    /**
+     * 心跳任务辅助类
+     */
     private final Heartbeat heartbeat;
+    /**
+     * 心跳定时器
+     */
     private final HeartbeatTask heartbeatTask;
     private final int sessionTimeoutMs;
     private final GroupCoordinatorMetrics sensors;
+    /**
+     * 消费者所属的Consumer Group 的Id
+     */
     protected final String groupId;
     protected final ConsumerNetworkClient client;
     protected final Time time;
     protected final long retryBackoffMs;
 
+    /**
+     * 是否需要执行发送JoinGroupRequest请求前的准备操作
+     */
     private boolean needsJoinPrepare = true;
+    /**
+     * 是否需要发送JoinGroupRequest请求
+     */
     private boolean rejoinNeeded = true;
     protected Node coordinator;
     protected String memberId;
     protected String protocol;
+    /**
+     * 服务端GroupCoordinator返回的年代信息，用于区分是不是同一次Rebalance操作
+     */
     protected int generation;
 
     private RequestFuture<Void> findCoordinatorFuture = null;

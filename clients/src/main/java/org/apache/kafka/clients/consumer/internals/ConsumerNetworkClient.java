@@ -48,10 +48,16 @@ public class ConsumerNetworkClient implements Closeable {
     private final KafkaClient client;
     private final AtomicBoolean wakeup = new AtomicBoolean(false);
     private final DelayedTaskQueue delayedTasks = new DelayedTaskQueue();
+    /**
+     * 缓冲发往每个Node服务端的ClientRequest列表
+     */
     private final Map<Node, List<ClientRequest>> unsent = new HashMap<>();
     private final Metadata metadata;
     private final Time time;
     private final long retryBackoffMs;
+    /**
+     * ClientRequest在缓冲unsent的超时时间
+     */
     private final long unsentExpiryMs;
 
     // this count is only accessed from the consumer's main thread
