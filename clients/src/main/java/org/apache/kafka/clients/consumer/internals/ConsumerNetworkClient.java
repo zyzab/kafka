@@ -222,6 +222,7 @@ public class ConsumerNetworkClient implements Closeable {
 
     private void poll(long timeout, long now, boolean executeDelayedTasks) {
         // send all the requests we can send now
+        //如果发生的的服务端节点Node连接上，则把unsent集合中对应的数据，写到发送缓存send中
         trySend(now);
 
         // ensure we don't poll any longer than the deadline for

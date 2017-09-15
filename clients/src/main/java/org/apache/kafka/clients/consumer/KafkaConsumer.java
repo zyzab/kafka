@@ -988,6 +988,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     private Map<TopicPartition, List<ConsumerRecord<K, V>>> pollOnce(long timeout) {
         // ensure we have partitions assigned if we expect to
+        // 确保
         if (subscriptions.partitionsAutoAssigned())
             coordinator.ensurePartitionAssignment();
 
@@ -999,6 +1000,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
         long now = time.milliseconds();
 
         // execute delayed tasks (e.g. autocommits and heartbeats) prior to fetching records
+        //执行延迟任务：心跳请求,自动offsets提交
         client.executeDelayedTasks(now);
 
         // init any new fetches (won't resend pending fetches)
@@ -1008,7 +1010,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
         // then just return it immediately
         if (!records.isEmpty())
             return records;
-
+        //组装拉取消息请求,保存在unsent集合
         fetcher.sendFetches();
         client.poll(timeout, now);
         return fetcher.fetchedRecords();
