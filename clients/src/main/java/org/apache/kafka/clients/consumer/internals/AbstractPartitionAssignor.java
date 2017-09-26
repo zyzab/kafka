@@ -49,13 +49,14 @@ public abstract class AbstractPartitionAssignor implements PartitionAssignor {
     @Override
     public Map<String, Assignment> assign(Cluster metadata, Map<String, Subscription> subscriptions) {
         Set<String> allSubscribedTopics = new HashSet<>();
+        //保存同一个group下每个消费者memberId对应的订阅的topic集合List<String>
         Map<String, List<String>> topicSubscriptions = new HashMap<>();
         for (Map.Entry<String, Subscription> subscriptionEntry : subscriptions.entrySet()) {
             List<String> topics = subscriptionEntry.getValue().topics();
             allSubscribedTopics.addAll(topics);
             topicSubscriptions.put(subscriptionEntry.getKey(), topics);
         }
-
+        //保存每个topic对应的分区数量
         Map<String, Integer> partitionsPerTopic = new HashMap<>();
         for (String topic : allSubscribedTopics) {
             Integer numPartitions = metadata.partitionCountForTopic(topic);

@@ -58,7 +58,9 @@ public class RangeAssignor extends AbstractPartitionAssignor {
     @Override
     public Map<String, List<TopicPartition>> assign(Map<String, Integer> partitionsPerTopic,
                                                     Map<String, List<String>> subscriptions) {
+        //保存每个topic对应的消费者consumerId集合
         Map<String, List<String>> consumersPerTopic = consumersPerTopic(subscriptions);
+        //保存每个消费者consumerId对应的?
         Map<String, List<TopicPartition>> assignment = new HashMap<>();
         for (String memberId : subscriptions.keySet())
             assignment.put(memberId, new ArrayList<TopicPartition>());

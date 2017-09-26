@@ -253,11 +253,13 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
     protected Map<String, ByteBuffer> performAssignment(String leaderId,
                                                         String assignmentStrategy,
                                                         Map<String, ByteBuffer> allSubscriptions) {
+        //通过broker返回的分区策略，获取对应的分区分配策略实现类
         PartitionAssignor assignor = lookupAssignor(assignmentStrategy);
         if (assignor == null)
             throw new IllegalStateException("Coordinator selected invalid assignment protocol: " + assignmentStrategy);
-
+        //保存当前group订阅的所有topic集合
         Set<String> allSubscribedTopics = new HashSet<>();
+        //保存当前group每个消费者对于的Subscription,key=memberId,value=Subscription
         Map<String, Subscription> subscriptions = new HashMap<>();
         for (Map.Entry<String, ByteBuffer> subscriptionEntry : allSubscriptions.entrySet()) {
             Subscription subscription = ConsumerProtocol.deserializeSubscription(subscriptionEntry.getValue());
