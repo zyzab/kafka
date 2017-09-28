@@ -390,6 +390,11 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
     }
 
 
+    /**
+     * 异步提交offsets
+     * @param offsets
+     * @param callback
+     */
     public void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets, final OffsetCommitCallback callback) {
         if (!coordinatorUnknown()) {
             doCommitOffsetsAsync(offsets, callback);
@@ -489,12 +494,13 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
         }
 
         public void run(final long now) {
+            //不存在有效的协调器coordinator
             if (coordinatorUnknown()) {
                 log.debug("Cannot auto-commit offsets for group {} since the coordinator is unknown", groupId);
                 reschedule(now + retryBackoffMs);
                 return;
             }
-
+            //是否重新分配分区
             if (needRejoin()) {
                 // skip the commit when we're rejoining since we'll commit offsets synchronously
                 // before the revocation callback is invoked
@@ -506,6 +512,7 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                 @Override
                 public void onComplete(Map<TopicPartition, OffsetAndMetadata> offsets, Exception exception) {
                     if (exception == null) {
+                        //修改下一次执行的时间
                         reschedule(now + interval);
                     } else {
                         log.warn("Auto offset commit failed for group {}: {}", groupId, exception.getMessage());

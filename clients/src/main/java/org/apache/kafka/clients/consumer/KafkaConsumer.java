@@ -808,6 +808,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public void subscribe(Collection<String> topics, ConsumerRebalanceListener listener) {
+        //防止多线程调用,实现了简单的锁功能
         acquire();
         try {
             if (topics.isEmpty()) {
@@ -819,6 +820,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                 metadata.setTopics(subscriptions.groupSubscription());
             }
         } finally {
+            //释放锁
             release();
         }
     }
@@ -988,19 +990,20 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
      */
     private Map<TopicPartition, List<ConsumerRecord<K, V>>> pollOnce(long timeout) {
         // ensure we have partitions assigned if we expect to
-        // 确保
+        // 如果是自动分配分区,确保跟服务器的group协调器是连接的，并且分区已分配好的
         if (subscriptions.partitionsAutoAssigned())
             coordinator.ensurePartitionAssignment();
 
         // fetch positions if we have partitions we're subscribed to that we
         // don't know the offset for
+        //如果存在没有position位置的分区，则请求服务器拉取position位置更新
         if (!subscriptions.hasAllFetchPositions())
             updateFetchPositions(this.subscriptions.missingFetchPositions());
 
         long now = time.milliseconds();
 
         // execute delayed tasks (e.g. autocommits and heartbeats) prior to fetching records
-        //执行延迟任务：心跳请求,自动offsets提交
+        //执行延迟任务：心跳请求,自动offsets提交操作
         client.executeDelayedTasks(now);
 
         // init any new fetches (won't resend pending fetches)

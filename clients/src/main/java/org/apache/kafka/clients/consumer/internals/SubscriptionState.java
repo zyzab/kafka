@@ -132,11 +132,11 @@ public class SubscriptionState {
     public void subscribe(Collection<String> topics, ConsumerRebalanceListener listener) {
         if (listener == null)
             throw new IllegalArgumentException("RebalanceListener cannot be null");
-
+        //设置订阅模式
         setSubscriptionType(SubscriptionType.AUTO_TOPICS);
 
         this.listener = listener;
-
+        //更新订阅topic的消息,以及重新分配分区
         changeSubscription(topics);
     }
 
@@ -145,6 +145,7 @@ public class SubscriptionState {
             this.subscription.clear();
             this.subscription.addAll(topicsToSubscribe);
             this.groupSubscription.addAll(topicsToSubscribe);
+            //修改是否重新分配分区
             this.needsPartitionAssignment = true;
 
             // Remove any assigned partitions which are no longer subscribed to
@@ -321,6 +322,10 @@ public class SubscriptionState {
         return assignedState(tp).position;
     }
 
+    /**
+     *  构造每个分区对应的最后拉取的消息offsets位置
+     * @return
+     */
     public Map<TopicPartition, OffsetAndMetadata> allConsumed() {
         Map<TopicPartition, OffsetAndMetadata> allConsumed = new HashMap<>();
         for (Map.Entry<TopicPartition, TopicPartitionState> entry : assignment.entrySet()) {

@@ -373,6 +373,7 @@ public class Fetcher<K, V> {
         } else {
             Map<TopicPartition, List<ConsumerRecord<K, V>>> drained = new HashMap<>();
             int recordsRemaining = maxPollRecords;
+            //处理缓存中的返回的消息结果
             Iterator<CompletedFetch> completedFetchesIterator = completedFetches.iterator();
 
             while (recordsRemaining > 0) {
@@ -382,8 +383,10 @@ public class Fetcher<K, V> {
 
                     CompletedFetch completion = completedFetchesIterator.next();
                     completedFetchesIterator.remove();
+                    //把CompletedFetch转成nextInLineRecords
                     nextInLineRecords = parseFetchedData(completion);
                 } else {
+                    //处理返回结果,并且更新记录下一次从服务端获取消息的offset位置
                     recordsRemaining -= append(drained, nextInLineRecords, recordsRemaining);
                 }
             }
@@ -410,6 +413,7 @@ public class Fetcher<K, V> {
             } else if (partitionRecords.fetchOffset == position) {
                 // we are ensured to have at least one record since we already checked for emptiness
                 List<ConsumerRecord<K, V>> partRecords = partitionRecords.take(maxRecords);
+
                 long nextOffset = partRecords.get(partRecords.size() - 1).offset() + 1;
 
                 log.trace("Returning fetched records at offset {} for assigned partition {} and update " +
