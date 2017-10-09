@@ -227,13 +227,16 @@ public class ConsumerNetworkClient implements Closeable {
 
         // ensure we don't poll any longer than the deadline for
         // the next scheduled task
+        // 在timeout与最近一个定时任务的执行时间之间取一个最小的时间
         timeout = Math.min(timeout, delayedTasks.nextTimeout(now));
+        //clientPoll操作,就是底层NIO的真正执行,在上一篇Producer中一样的操作
         clientPoll(timeout, now);
         now = time.milliseconds();
 
         // handle any disconnects by failing the active requests. note that disconnects must
         // be checked immediately following poll since any subsequent call to client.ready()
         // will reset the disconnect status
+        //检查处理关闭连接的Node
         checkDisconnects(now);
 
         // execute scheduled tasks
@@ -245,6 +248,7 @@ public class ConsumerNetworkClient implements Closeable {
         trySend(now);
 
         // fail requests that couldn't be sent if they have expired
+        //处理过期的请求
         failExpiredRequests(now);
     }
 
